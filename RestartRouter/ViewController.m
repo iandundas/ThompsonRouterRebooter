@@ -9,7 +9,7 @@
 #import "ViewController.h"
 
 @interface ViewController ()
-
+- (void)processLine:(NSString *)line fromSocket:(GCDAsyncSocket *)sock;
 @end
 
 @implementation ViewController
@@ -54,93 +54,93 @@
 
 - (void)processLine:(NSString *)line fromSocket:(GCDAsyncSocket *)sock{
     
-}
-- (void)socket:(GCDAsyncSocket *)sock didReadData:(NSData *)data withTag:(long)tag{
+    NSLog(@"LINE: %@", line);
     
-    NSLog(@"------------");
-    NSString *telnetLine_old = [NSString stringWithUTF8String:[data bytes]];    
-    NSString *telnetLine = [[NSString alloc] initWithData:data
-                                              encoding:NSUTF8StringEncoding];
-
-    if (!telnetLine){
-        [self.asyncSocket readDataWithTimeout:-1 tag:0];
-        NSLog(@"Nil line received, skipping");
-        return;
-    }
-    
-    if (!self.stringReceived){
-        NSLog(@"Initing mutable string with '%@'", telnetLine);
-        self.stringReceived = [[NSMutableString alloc]initWithString:telnetLine];
-    }
-    else{
-        NSLog(@"Appending line: %@", telnetLine);
-        [self.stringReceived appendString:telnetLine];
-    }
-    
-    if ([telnetLine rangeOfString:@"\r\n"].location !=NSNotFound){
-        NSLog(@"FOUND NEW LINE: %@", self.stringReceived);
-    }
-    else{
-        NSLog(@"no new line, checking for username/password prompt");
+    if ([line compare:@"Username : "]==NSOrderedSame){
         
-        if ([self.stringReceived compare:@"Username : "]==NSOrderedSame){
-            
-            NSLog(@"ready to accept username");
-            
-            NSString *myStr = @"SuperUser\r\n"; // 
-            NSData *myData = [myStr dataUsingEncoding:NSUTF8StringEncoding];
-            
-            [sock writeData:myData withTimeout:5.0 tag:0];
-            //        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
-            
-        }
-        
-        
-        [self.asyncSocket readDataWithTimeout:-1 tag:0];
-        return;
-    }
-    
-    
-
-    if ([self.stringReceived rangeOfString:@"Username : SuperUser"].location != NSNotFound){
-        NSLog(@"Interesting... (username)");
-//        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
-    }
-    else if ([self.stringReceived rangeOfString:@"Password : **"].location != NSNotFound){
-        NSLog(@"Interesting...(password)");
-//        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
-    }
-    else if ([self.stringReceived rangeOfString:@"Invalid username/password"].location != NSNotFound){
-        NSLog(@"Failed to login :(");
-        [sock disconnect];
-    }
-    else if ([self.stringReceived compare:@"Password : "]==NSOrderedSame){
-        
-        NSLog(@"ready to send password");
-        
-        NSString *myStr = @"O2Br0ad64nd\r\n"; // \r\n
+        NSString *myStr = @"SuperUser\r\n"; // 
         NSData *myData = [myStr dataUsingEncoding:NSUTF8StringEncoding];
         
         [sock writeData:myData withTimeout:5.0 tag:0];
         
-//        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
-//        
-//        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
-//        [self.asyncSocket readDataWithTimeout:5 tag:1];
+    }
+    if ([line compare:@"Password : "]==NSOrderedSame){
         
-    }
-    else if (self.stringReceived==nil){
-        NSLog(@"[Blank line received]");
-    }
-    else {
-        NSLog(@"Unknown received: '%@' vs '%@'", telnetLine, telnetLine_old);
-//        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];
+        NSString *myStr = @"O2Br0ad64nd\r\n";
+        NSData *myData = [myStr dataUsingEncoding:NSUTF8StringEncoding];
+        
+        [sock writeData:myData withTimeout:5.0 tag:0];
     }
     
+    
+    
+//    if ([self.stringReceived rangeOfString:@"Username : SuperUser"].location != NSNotFound){
+//        NSLog(@"Interesting... (username)");
+//        //        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
+//    }
+//    else if ([self.stringReceived rangeOfString:@"Password : **"].location != NSNotFound){
+//        NSLog(@"Interesting...(password)");
+//        //        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
+//    }
+//    else if ([self.stringReceived rangeOfString:@"Invalid username/password"].location != NSNotFound){
+//        NSLog(@"Failed to login :(");
+//        [sock disconnect];
+//    }
+//    else if ([self.stringReceived compare:@"Password : "]==NSOrderedSame){
+//        
+//        NSLog(@"ready to send password");
+//        
+//        NSString *myStr = @"O2Br0ad64nd\r\n"; // \r\n
+//        NSData *myData = [myStr dataUsingEncoding:NSUTF8StringEncoding];
+//        
+//        [sock writeData:myData withTimeout:5.0 tag:0];
+//        
+//        //        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
+//        //        
+//        //        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
+//        //        [self.asyncSocket readDataWithTimeout:5 tag:1];
+//        
+//    }
+//    else if (self.stringReceived==nil){
+//        NSLog(@"[Blank line received]");
+//    }
+//    else {
+//        NSLog(@"Unknown received: '%@' vs '%@'", telnetLine, telnetLine_old);
+//        //        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];
+//    }   
+    
+    
+    
+    
+}
+- (void)socket:(GCDAsyncSocket *)sock didReadData:(NSData *)data withTag:(long)tag{
+ 
+    NSString *telnetLine = [[NSString alloc] initWithData:data
+                                              encoding:NSUTF8StringEncoding];
+    NSLog(@"------------");
+    
+    if (!telnetLine){
+        [self.asyncSocket readDataWithTimeout:-1 tag:0];
+        return;
+    }
+    
+    if (!self.stringReceived){
+        self.stringReceived = [[NSMutableString alloc]init];
+    }
 
+    [self.stringReceived appendString:telnetLine];
+    
+    if ([self.stringReceived rangeOfString:@"\r\n"].location !=NSNotFound || [self.stringReceived rangeOfString:@" : "].location !=NSNotFound ){
+
+        // Feed each line (may have received more than one) into line processor:
+        for (NSString *line in [self.stringReceived componentsSeparatedByCharactersInSet: [NSCharacterSet newlineCharacterSet]]){
+            [self processLine:line fromSocket:sock];
+        }
+        
+        [self.stringReceived setString:@""];
+    }
     
     [self.asyncSocket readDataWithTimeout:-1 tag:0];
-
 }
 
 
