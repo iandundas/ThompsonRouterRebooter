@@ -14,6 +14,7 @@
 
 @implementation ViewController
 @synthesize asyncSocket=_asyncSocket;
+@synthesize stringReceived = _stringReceived;
 
 - (void)viewDidLoad
 {
@@ -24,13 +25,14 @@
     self.asyncSocket = [[GCDAsyncSocket alloc]initWithDelegate:self delegateQueue:mainQueue];
     
     NSError *error = nil;
-    if (![self.asyncSocket connectToHost:@"192.168.1.254" onPort:23 error:&error])
+     if (![self.asyncSocket connectToHost:@"192.168.1.254" onPort:23 error:&error])
+//    if (![self.asyncSocket connectToHost:@"192.168.1.69" onPort:8889 error:&error])
     {
         NSLog(@"Error connecting: %@", error);
     }
     
-    [self.asyncSocket readDataWithTimeout:5 tag:1];
-    
+//    
+
     NSLog(@"Connected!");
     
 }
@@ -46,39 +48,109 @@
     return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
 }
 
-
 #pragma mark - Delegate:
 
+
+
+- (void)processLine:(NSString *)line fromSocket:(GCDAsyncSocket *)sock{
+    
+}
 - (void)socket:(GCDAsyncSocket *)sock didReadData:(NSData *)data withTag:(long)tag{
     
-    NSLog(@"Length: %i", data.length);
+    NSLog(@"------------");
+    NSString *telnetLine_old = [NSString stringWithUTF8String:[data bytes]];    
+    NSString *telnetLine = [[NSString alloc] initWithData:data
+                                              encoding:NSUTF8StringEncoding];
 
-    NSString *telnetLine = [NSString stringWithUTF8String:[data bytes]];    
-
-    if ([telnetLine compare:@"Username : "]){
-        
-        NSLog(@"ready to accept username");
-        
+    if (!telnetLine){
+        [self.asyncSocket readDataWithTimeout:-1 tag:0];
+        NSLog(@"Nil line received, skipping");
+        return;
     }
-    else if (telnetLine==nil){
-        NSLog(@"[Blank line received]");
+    
+    if (!self.stringReceived){
+        NSLog(@"Initing mutable string with '%@'", telnetLine);
+        self.stringReceived = [[NSMutableString alloc]initWithString:telnetLine];
     }
     else{
-        NSLog(@"Line received: %@", telnetLine);
+        NSLog(@"Appending line: %@", telnetLine);
+        [self.stringReceived appendString:telnetLine];
     }
-    [self.asyncSocket readDataWithTimeout:5 tag:1];
+    
+    if ([telnetLine rangeOfString:@"\r\n"].location !=NSNotFound){
+        NSLog(@"FOUND NEW LINE: %@", self.stringReceived);
+    }
+    else{
+        NSLog(@"no new line, checking for username/password prompt");
+        
+        if ([self.stringReceived compare:@"Username : "]==NSOrderedSame){
+            
+            NSLog(@"ready to accept username");
+            
+            NSString *myStr = @"SuperUser\r\n"; // 
+            NSData *myData = [myStr dataUsingEncoding:NSUTF8StringEncoding];
+            
+            [sock writeData:myData withTimeout:5.0 tag:0];
+            //        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
+            
+        }
+        
+        
+        [self.asyncSocket readDataWithTimeout:-1 tag:0];
+        return;
+    }
+    
+    
+
+    if ([self.stringReceived rangeOfString:@"Username : SuperUser"].location != NSNotFound){
+        NSLog(@"Interesting... (username)");
+//        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
+    }
+    else if ([self.stringReceived rangeOfString:@"Password : **"].location != NSNotFound){
+        NSLog(@"Interesting...(password)");
+//        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
+    }
+    else if ([self.stringReceived rangeOfString:@"Invalid username/password"].location != NSNotFound){
+        NSLog(@"Failed to login :(");
+        [sock disconnect];
+    }
+    else if ([self.stringReceived compare:@"Password : "]==NSOrderedSame){
+        
+        NSLog(@"ready to send password");
+        
+        NSString *myStr = @"O2Br0ad64nd\r\n"; // \r\n
+        NSData *myData = [myStr dataUsingEncoding:NSUTF8StringEncoding];
+        
+        [sock writeData:myData withTimeout:5.0 tag:0];
+        
+//        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
+//        
+//        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
+//        [self.asyncSocket readDataWithTimeout:5 tag:1];
+        
+    }
+    else if (self.stringReceived==nil){
+        NSLog(@"[Blank line received]");
+    }
+    else {
+        NSLog(@"Unknown received: '%@' vs '%@'", telnetLine, telnetLine_old);
+//        [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];
+    }
+    
+
+    
+    [self.asyncSocket readDataWithTimeout:-1 tag:0];
+
 }
 
+
 - (void)socket:(GCDAsyncSocket *)sock didAcceptNewSocket:(GCDAsyncSocket *)newSocket{
-    NSString *requestStr = [NSString stringWithFormat:@"help"];
-	NSData *requestData = [requestStr dataUsingEncoding:NSUTF8StringEncoding];
-	
-	[sock writeData:requestData withTimeout:10 tag:0];
-	[sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];    
+//    [sock readDataToData:[GCDAsyncSocket CRLFData] withTimeout:10 tag:0];  
 }
 - (void)socket:(GCDAsyncSocket *)sock didConnectToHost:(NSString *)host port:(UInt16)port{
 
     NSLog(@"Connected to Host");
+    [self.asyncSocket readDataWithTimeout:5 tag:1];
     
 }
 
@@ -87,7 +159,7 @@
                bytesDone:(NSUInteger)length
 {
     NSLog(@"Should timeout read?");
-    [self.asyncSocket readDataWithTimeout:5 tag:1]; // TODO this is bad.
+//    [self.asyncSocket readDataWithTimeout:5 tag:1]; // TODO this is bad.
     return 5;    
 }
 
@@ -98,5 +170,79 @@
     
     return 5;
 }
+
+
+
+
+
+
+
+
+/**
+ * Called when a socket has read in data, but has not yet completed the read.
+ * This would occur if using readToData: or readToLength: methods.
+ * It may be used to for things such as updating progress bars.
+ **/
+//- (void)socket:(GCDAsyncSocket *)sock didReadPartialDataOfLength:(NSUInteger)partialLength tag:(long)tag{
+//            NSLog( @"%s" , _cmd );
+//}
+
+
+/**
+ * Called when a socket has written some data, but has not yet completed the entire write.
+ * It may be used to for things such as updating progress bars.
+ **/
+- (void)socket:(GCDAsyncSocket *)sock didWritePartialDataOfLength:(NSUInteger)partialLength tag:(long)tag{
+            NSLog( @"%s" , _cmd );
+}
+
+/**
+ * Called if a write operation has reached its timeout without completing.
+ * This method allows you to optionally extend the timeout.
+ * If you return a positive time interval (> 0) the write's timeout will be extended by the given amount.
+ * If you don't implement this method, or return a non-positive time interval (<= 0) the write will timeout as usual.
+ * 
+ * The elapsed parameter is the sum of the original timeout, plus any additions previously added via this method.
+ * The length parameter is the number of bytes that have been written so far for the write operation.
+ * 
+ * Note that this method may be called multiple times for a single write if you return positive numbers.
+ **/
+
+/**
+ * Conditionally called if the read stream closes, but the write stream may still be writeable.
+ * 
+ * This delegate method is only called if autoDisconnectOnClosedReadStream has been set to NO.
+ * See the discussion on the autoDisconnectOnClosedReadStream method for more information.
+ **/
+- (void)socketDidCloseReadStream:(GCDAsyncSocket *)sock{
+            NSLog( @"%s" , _cmd );
+}
+
+/**
+ * Called when a socket disconnects with or without error.
+ * 
+ * If you call the disconnect method, and the socket wasn't already disconnected,
+ * this delegate method will be called before the disconnect method returns.
+ **/
+- (void)socketDidDisconnect:(GCDAsyncSocket *)sock withError:(NSError *)err{
+ 
+    if (err)
+        NSLog(@"Did disconnect with error: %@", err.description);
+    else
+        NSLog(@"Disconnected.");
+}
+
+/**
+ * Called after the socket has successfully completed SSL/TLS negotiation.
+ * This method is not called unless you use the provided startTLS method.
+ * 
+ * If a SSL/TLS negotiation fails (invalid certificate, etc) then the socket will immediately close,
+ * and the socketDidDisconnect:withError: delegate method will be called with the specific SSL error code.
+ **/
+- (void)socketDidSecure:(GCDAsyncSocket *)sock{
+            NSLog( @"%s" , _cmd );
+    
+}
+
 
 @end

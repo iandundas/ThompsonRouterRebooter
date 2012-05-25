@@ -11,5 +11,6 @@
 
 @interface ViewController : UIViewController<GCDAsyncSocketDelegate>
 
+@property (nonatomic, retain) NSMutableString *stringReceived;
 @property (nonatomic, retain) GCDAsyncSocket *asyncSocket;
 @end
