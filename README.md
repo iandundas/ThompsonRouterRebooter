@@ -25,3 +25,4 @@ Tested with Thomson TG585 v7 O2 8.2.7.7.KP using iOS 5.1.1 (4S)
 
 ### Thanks
 With thanks to Robbie Hanson's https://github.com/robbiehanson/CocoaAsyncSocket 
+Also thanks for inspiration from here: http://nothingbutreboots.com/2009/hacking-the-o2-wireless-box-ii
