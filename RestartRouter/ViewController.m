@@ -17,7 +17,8 @@
 @synthesize     asyncSocket     = _asyncSocket,
                 stringReceived  = _stringReceived,
                 isLoggedIn      = _isLoggedIn,
-                statusMessage   = _statusMessage;
+                statusMessage   = _statusMessage,
+                startButton     = _startButton;
 
 - (void)viewDidLoad
 {
@@ -28,12 +29,7 @@
     dispatch_queue_t mainQueue = dispatch_get_main_queue();
     self.asyncSocket = [[GCDAsyncSocket alloc]initWithDelegate:self delegateQueue:mainQueue];
     
-    NSError *error = nil;
-    if (![self.asyncSocket connectToHost:@"192.168.1.254" onPort:23 error:&error]){
-        NSLog(@"Error connecting: %@", error);
-        [self.view setBackgroundColor:[UIColor redColor]];
-        [self.statusMessage setText:@"Error Connecting"];
-    }
+    [self.view setBackgroundColor:[UIColor blueColor]];
 }
 
 - (void)viewDidUnload
@@ -47,6 +43,20 @@
     return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
 }
 
+- (IBAction)didTouchButton:(UIButton *)sender{
+    if (sender.tag==1){
+        if (self.asyncSocket.isDisconnected){
+            
+            NSError *error = nil;
+            if (![self.asyncSocket connectToHost:@"192.168.1.254" onPort:23 error:&error]){
+                NSLog(@"Error connecting: %@", error);
+                [self.view setBackgroundColor:[UIColor redColor]];
+                [self.statusMessage setText:@"Error Connecting"];
+                [self.startButton setHidden:YES];
+            }            
+        }
+    }
+}
 #pragma mark - GCDAsyncSocketDelegate Delegate Methods:
 
 - (void)processLine:(NSString *)line fromSocket:(GCDAsyncSocket *)sock{

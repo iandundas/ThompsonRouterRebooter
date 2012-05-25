@@ -11,10 +11,13 @@
 
 @interface ViewController : UIViewController<GCDAsyncSocketDelegate>
 
+@property BOOL isLoggedIn;
+
 @property (nonatomic, retain) NSMutableString *stringReceived;
 @property (nonatomic, retain) GCDAsyncSocket *asyncSocket;
 
-@property BOOL isLoggedIn;
-
 @property (nonatomic, retain) IBOutlet UILabel *statusMessage;
+@property (nonatomic, retain) IBOutlet UIButton *startButton;
+
+- (IBAction)didTouchButton:(UIButton *)sender;
 @end
