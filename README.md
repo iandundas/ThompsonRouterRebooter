@@ -10,7 +10,7 @@ I welcome pull requests if anyone wants to add support for more routers - it sho
 
 ### Getting Started
 
-`git clone git@github.com:iandundas/ThompsonRouterRebooter.git`
+`git clone git@github.com:iandundas/ThompsonRouterRebooter.git && cd ThompsonRouterRebooter`
 
 You'll also need to run the following (in order to download CocoaAsyncSocket)
 
