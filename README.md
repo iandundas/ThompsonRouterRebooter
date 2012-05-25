@@ -10,12 +10,11 @@ I welcome pull requests if anyone wants to add support for more routers - it sho
 
 ### Getting Started
 
-`$ git clone git@github.com:iandundas/ThompsonRouterRebooter.git`
+`git clone git@github.com:iandundas/ThompsonRouterRebooter.git`
 
 You'll also need to run the following (in order to download CocoaAsyncSocket)
 
-`$ git submodule init`
-`$ git submodule update`
+`git submodule init && git submodule update`
 
 ### Known Issues
 About 10% of the time, nothing happens when you press the button. TODO: investigate why..
