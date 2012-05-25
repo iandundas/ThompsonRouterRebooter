@@ -68,14 +68,14 @@
         
         // The last line of the welcome message, indicating the router is down to party:
         if ([line compare:@"------------------------------------------------------------------------"]==NSOrderedSame){
-
-            NSLog(@"Going for reboot now!");
-            [self.view setBackgroundColor:[UIColor greenColor]];
             
             NSString *myStr = @"system reboot\r\n";
             NSData *myData = [myStr dataUsingEncoding:NSUTF8StringEncoding];
             
             [sock writeData:myData withTimeout:5.0 tag:0];   
+            
+            NSLog(@"Going for reboot now!");
+            [self.view setBackgroundColor:[UIColor greenColor]];
             
             [sock disconnectAfterWriting];
             
